@@ -1,0 +1,65 @@
+spring:
+  application:
+    name: back
+  # DB 접속 정보는 back/.env 에 둔다 (.env.example 을 복사해서 작성)
+  # back 폴더 / 프로젝트 루트 어디서 실행해도 찾도록 두 경로 모두 지정하고, OS 환경 변수로 넘긴 값이 우선한다
+  config:
+    import:
+      - optional:file:./.env[.properties]
+      - optional:file:./back/.env[.properties]
+  datasource:
+    url: jdbc:oracle:thin:@${DB_HOST:127.0.0.1}:${DB_PORT:1521}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+  # 파일 업로드 크기 제한
+  servlet:
+    multipart:
+      max-file-size: 10MB      # 파일 하나
+      max-request-size: 50MB   # 요청 하나 전체 (파일 여러 개 + 글 내용)
+
+# 서버 포트 (React 의 vite.config.js API_TARGET 과 같아야 한다)
+server:
+  port: 8080
+
+mybatis:
+  # Mapper XML 위치
+  mapper-locations: classpath*:mapper*/**/*.xml
+  # XML 에서 패키지 없이 클래스명만 쓸 수 있게 해 주는 기준 패키지
+  type-aliases-package: com.kh.back.**.dto
+  configuration:
+    # 컬럼명이 sector_name 처럼 snake_case 여도 자바 필드 sectorName 에 자동 매핑
+    map-underscore-to-camel-case: true
+
+# 프론트 개발 서버 주소 (CORS 허용)
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+
+# 로그인 토큰 설정
+jwt:
+  # 토큰 서명 키. 32바이트(영문 32자) 미만이면 서버가 시작되지 않는다.
+  # 키 길이에 따라 서명 방식이 자동으로 정해진다 (32~47바이트 HS256, 48~63바이트 HS384, 64바이트 이상 HS512)
+  secret: ${JWT_SECRET:final-project-sample-secret-key-please-change-0123456789}
+  # access token 유효 시간 (30m = 30분, 10s = 10초)
+  access-token-validity: 30m
+  # refresh token 유효 시간 (14d = 14일)
+  refresh-token-validity: 14d
+  # refresh token 쿠키의 Secure 속성. https 에서만 쿠키를 보낸다. 로컬 http 개발에서는 false
+  cookie-secure: false
+
+# 업로드한 파일을 저장할 폴더.
+# 상대 경로는 "서버를 실행한 위치" 기준이다 (IntelliJ 실행 → back 폴더, java -jar → 명령을 실행한 폴더)
+file:
+  upload-dir: ./uploads
+
+# 예측 서버(FastAPI) 주소와 시간 제한
+ml:
+  base-url: ${ML_BASE_URL:http://localhost:8000}
+  connect-timeout: 2s   # 연결이 안 되면 2초 뒤 포기 → 503
+  read-timeout: 5s      # 응답이 5초 안에 안 오면 포기 → 503
+
+# 실행되는 SQL 을 콘솔에서 보기 위한 로그 레벨
+logging:
+  level:
+    com.kh.back: debug
